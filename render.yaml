@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: kyopal
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: ADMIN_PASSWORD
+        value: kyopal
+      - key: NODE_ENV
+        value: production

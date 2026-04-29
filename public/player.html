@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kyopal">
+<title>Kyopal — Tournament</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A0F;--bg2:#12121A;--bg3:#1A1A26;--bg4:#22222F;
+  --brd:#2A2A3A;--brd2:#4A4A6A;
+  --t1:#E8E8F0;--t2:#8888A0;--t3:#555568;
+  --acc:#00D4AA;--accg:rgba(0,212,170,0.15);--accd:#00A080;
+  --red:#FF4466;--yel:#FFAA22;
+  --gold:#FFD700;--silver:#C0C0C0;--bronze:#CD7F32;
+  --r:10px;--rs:6px;
+}
+html,body{background:var(--bg);color:var(--t1);font-family:'Chakra Petch',sans-serif;min-height:100dvh;-webkit-tap-highlight-color:transparent}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,212,170,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(0,100,212,0.03) 0%,transparent 60%);pointer-events:none}
+.app{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:0 16px 100px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;border-bottom:1px solid var(--brd);margin-bottom:20px}
+.logo{font-size:22px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--acc),#00AAFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-weight:400;opacity:.6;font-size:12px;letter-spacing:2px;display:block;background:none;-webkit-text-fill-color:var(--t3)}
+button{font-family:'Chakra Petch',sans-serif;cursor:pointer;border:none;outline:none;transition:all .2s}
+.btn{background:var(--acc);color:var(--bg);font-weight:600;font-size:14px;padding:10px 20px;border-radius:var(--rs)}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.3;pointer-events:none}
+.btn-s{background:var(--bg3);color:var(--t1);font-weight:500;font-size:13px;padding:8px 16px;border-radius:var(--rs);border:1px solid var(--brd)}
+.card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+input{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rs);color:var(--t1);font-family:'Chakra Petch',sans-serif;font-size:14px}
+input:focus{border-color:var(--acc);outline:none}
+input::placeholder{color:var(--t3)}
+label{display:block;font-size:11px;font-weight:600;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border-radius:var(--r);padding:4px;border:1px solid var(--brd)}
+.tab{flex:1;padding:10px 8px;text-align:center;font-size:13px;font-weight:500;color:var(--t3);border-radius:var(--rs);background:transparent}
+.tab.active{background:var(--bg3);color:var(--acc);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.section{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.banner{padding:16px;margin-bottom:20px;background:linear-gradient(135deg,rgba(0,212,170,0.06),rgba(0,150,255,0.04));border:1px solid rgba(0,212,170,0.15);border-radius:var(--r);display:flex;align-items:center;justify-content:space-between}
+.bstat{text-align:center}.bv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--acc)}.bl{font-size:10px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.match-hero{background:linear-gradient(135deg,rgba(0,212,170,0.08),rgba(0,100,212,0.06));border:1px solid rgba(0,212,170,0.2);border-radius:var(--r);padding:24px 16px;margin-bottom:16px;text-align:center}
+.match-hero .label{font-size:11px;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.match-hero .vs{display:flex;align-items:center;justify-content:center;gap:16px}
+.match-hero .pname{font-size:18px;font-weight:700;flex:1}
+.match-hero .you{color:var(--acc)}
+.match-hero .mvs{font-size:12px;color:var(--t3);font-weight:700;letter-spacing:2px}
+.match-hero .table-num{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:var(--acc);margin:8px 0}
+.match-hero .status{font-size:12px;color:var(--t2);margin-top:8px}
+.match-hero .result{font-size:14px;font-weight:600;margin-top:8px;padding:6px 16px;border-radius:20px;display:inline-block}
+.match-hero .result.w{background:rgba(0,212,170,0.1);color:var(--acc)}
+.match-hero .result.l{background:rgba(255,68,102,0.1);color:var(--red)}
+
+.history-card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.history-round{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);width:32px}
+.history-opp{flex:1;font-size:14px;font-weight:500}
+.history-result{font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px}
+.history-result.w{background:rgba(0,212,170,0.1);color:var(--acc)}
+.history-result.l{background:rgba(255,68,102,0.1);color:var(--red)}
+.history-result.p{background:rgba(255,170,34,0.1);color:var(--yel)}
+
+.standings-table{width:100%;border-collapse:collapse}
+.standings-table th{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd)}
+.standings-table th.c{text-align:center}
+.standings-table td{padding:10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'JetBrains Mono',monospace}
+.standings-table td.n{font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px}
+.standings-table td.c{text-align:center}
+.standings-table tr.me td{color:var(--acc)}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700}
+.r1{background:rgba(255,215,0,0.15);color:var(--gold)}.r2{background:rgba(192,192,192,0.15);color:var(--silver)}.r3{background:rgba(205,127,50,0.15);color:var(--bronze)}
+
+.waiting-anim{display:flex;gap:6px;justify-content:center;margin:20px 0}
+.waiting-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:pulse 1.4s infinite ease-in-out}
+.waiting-dot:nth-child(2){animation-delay:.2s}.waiting-dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fade{animation:fadeIn .3s ease-out}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--bg);padding:10px 24px;border-radius:var(--r);font-weight:600;font-size:14px;z-index:200;animation:fadeIn .2s}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);display:inline-block;animation:pulse 1.4s infinite;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const API = '/api';
+let tournament = null;
+let myId = localStorage.getItem('kyopal_player_id') || '';
+let myName = localStorage.getItem('kyopal_player_name') || '';
+let tab = 'match';
+let pollTimer = null;
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function toast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function pname(id) { const p = tournament?.players.find(x => x.id === id); return p ? p.name : '???'; }
+
+async function load() {
+  try {
+    tournament = await api('/tournament');
+    render();
+  } catch { render(); }
+}
+
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(load, 5000); // refresh every 5s
+}
+function stopPolling() { if (pollTimer) clearInterval(pollTimer); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (!tournament) {
+    app.innerHTML = '<div class="header"><div class="logo">KYOPAL<span>TOURNAMENT MANAGER</span></div></div><div class="card" style="text-align:center;padding:40px"><div style="color:var(--t3);font-size:14px">No active tournament</div></div>';
+    return;
+  }
+
+  // Check if still registered
+  if (myId && !tournament.players.find(p => p.id === myId)) {
+    myId = ''; myName = '';
+    localStorage.removeItem('kyopal_player_id');
+    localStorage.removeItem('kyopal_player_name');
+  }
+
+  if (!myId) {
+    app.innerHTML = renderJoin();
+  } else if (!tournament.started) {
+    app.innerHTML = renderWaiting();
+    startPolling();
+  } else {
+    app.innerHTML = renderPlayerView();
+    startPolling();
+  }
+}
+
+// ── Join ──
+function renderJoin() {
+  const t = tournament;
+  const locked = t.registrationLocked || t.started;
+
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div></div>
+    <div class="banner">
+      <div class="bstat"><div class="bv">${t.players.length}</div><div class="bl">Players</div></div>
+      <div class="bstat"><div class="bv">${locked ? '🔒' : '🟢'}</div><div class="bl">${locked ? 'Locked' : 'Open'}</div></div>
+    </div>
+    ${locked ? `
+      <div class="card" style="text-align:center;padding:30px">
+        <div style="color:var(--t3);font-size:14px">Registration is currently closed</div>
+      </div>
+    ` : `
+      <div class="card">
+        <label>Enter Your Name</label>
+        <input type="text" id="pname" placeholder="Your duelist name" onkeydown="if(event.key==='Enter')joinTournament()">
+      </div>
+      <button class="btn" style="width:100%;padding:14px;font-size:16px" onclick="joinTournament()">Join Tournament</button>
+    `}
+    ${t.players.length > 0 ? `
+      <div class="section" style="margin-top:20px">Registered Players</div>
+      <div class="card" style="padding:0">
+        ${t.players.map((p,i) => `<div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);margin-right:10px">${i+1}</span>${esc(p.name)}</div>`).join('')}
+      </div>` : ''}
+  `;
+}
+
+async function joinTournament() {
+  const name = document.getElementById('pname').value.trim();
+  if (!name) return;
+  try {
+    const data = await api('/tournament/join', { method: 'POST', body: JSON.stringify({ name }) });
+    myId = data.player.id;
+    myName = data.player.name;
+    localStorage.setItem('kyopal_player_id', myId);
+    localStorage.setItem('kyopal_player_name', myName);
+    toast('Joined!');
+    await load();
+  } catch (e) { toast(e.message); }
+}
+
+// ── Waiting ──
+function renderWaiting() {
+  const t = tournament;
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div></div>
+    <div class="card" style="text-align:center;padding:30px">
+      <div style="font-size:16px;font-weight:600;margin-bottom:8px">Welcome, ${esc(myName)}!</div>
+      <div style="color:var(--t2);font-size:14px;margin-bottom:16px">Waiting for tournament to start...</div>
+      <div class="waiting-anim"><div class="waiting-dot"></div><div class="waiting-dot"></div><div class="waiting-dot"></div></div>
+      <div style="color:var(--t3);font-size:12px;margin-top:16px">${t.players.length} players registered</div>
+    </div>
+    ${t.players.length > 0 ? `
+      <div class="section">Registered Players</div>
+      <div class="card" style="padding:0">
+        ${t.players.map((p,i) => `<div style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px;${p.id===myId?'color:var(--acc)':''}">${esc(p.name)} ${p.id===myId?'(you)':''}</div>`).join('')}
+      </div>` : ''}
+    <div style="text-align:center;margin-top:12px"><button class="btn-s" style="font-size:12px;padding:6px 12px" onclick="leavePlayer()">Leave Tournament</button></div>
+  `;
+}
+
+function leavePlayer() {
+  myId = ''; myName = '';
+  localStorage.removeItem('kyopal_player_id');
+  localStorage.removeItem('kyopal_player_name');
+  load();
+}
+
+// ── Player Tournament View ──
+function renderPlayerView() {
+  const t = tournament;
+
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div>
+      <div style="font-size:12px;color:var(--t2)"><span class="live-dot"></span>Live</div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${tab==='match'?'active':''}" onclick="tab='match';render()">My Match</button>
+      <button class="tab ${tab==='standings'?'active':''}" onclick="tab='standings';render()">Standings</button>
+      <button class="tab ${tab==='history'?'active':''}" onclick="tab='history';render()">History</button>
+    </div>
+    ${tab === 'match' ? renderMyMatch() : tab === 'standings' ? renderStandings() : renderHistory()}
+  `;
+}
+
+function renderMyMatch() {
+  const t = tournament;
+
+  if (t.finished) {
+    const s = t.standings;
+    const myRank = s.findIndex(p => p.id === myId) + 1;
+    const top3 = s.slice(0,3);
+    return `<div class="card fade" style="text-align:center;padding:30px">
+      <div style="font-size:36px;margin-bottom:12px">🏆</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:12px">Tournament Complete!</div>
+      <div style="display:flex;justify-content:center;gap:20px;margin-bottom:20px">${top3.map((p,i)=>`<div><div class="rb r${i+1}" style="width:36px;height:36px;font-size:14px;margin:0 auto 6px">${i+1}</div><div style="font-size:14px;font-weight:600;${p.id===myId?'color:var(--acc)':''}">${esc(p.name)}</div></div>`).join('')}</div>
+      <div style="font-size:14px;color:var(--t2)">You finished <strong style="color:var(--acc)">#${myRank}</strong> of ${s.length}</div>
+    </div>`;
+  }
+
+  // Find my current match
+  let myMatch = null;
+  let tableNum = 0;
+  let roundLabel = '';
+
+  if (t.topCutPhase) {
+    for (const br of t.topCutBracket) {
+      br.matches.forEach((m, i) => {
+        if (m.player1 === myId || m.player2 === myId) {
+          myMatch = m; tableNum = i + 1; roundLabel = br.name;
+        }
+      });
+    }
+    if (!myMatch) {
+      const myRank = t.standings.findIndex(p => p.id === myId) + 1;
+      return `<div class="card fade" style="text-align:center;padding:30px">
+        <div style="font-size:14px;color:var(--t2);margin-bottom:8px">Top Cut in progress</div>
+        <div style="font-size:13px;color:var(--t3)">You finished #${myRank} in Swiss — not in the top ${t.topCutSize}</div>
+      </div>`;
+    }
+  } else {
+    const round = t.rounds[t.currentRound - 1];
+    if (round) {
+      round.matches.forEach((m, i) => {
+        if (m.player1 === myId || m.player2 === myId) {
+          myMatch = m; tableNum = i + 1;
+        }
+      });
+      roundLabel = `Round ${t.currentRound}`;
+    }
+  }
+
+  if (!myMatch) return '<div class="card" style="text-align:center;padding:30px;color:var(--t3)">No match found</div>';
+
+  const isBye = myMatch.bye;
+  if (isBye) {
+    return `<div class="match-hero fade">
+      <div class="label">${roundLabel}</div>
+      <div style="font-size:20px;font-weight:700;margin:16px 0">You have a BYE</div>
+      <div class="status">Free win this round — relax!</div>
+    </div>`;
+  }
+
+  const isP1 = myMatch.player1 === myId;
+  const oppId = isP1 ? myMatch.player2 : myMatch.player1;
+  const oppName = pname(oppId);
+
+  let resultHtml = '';
+  if (myMatch.reported) {
+    if (myMatch.result === 'dl') {
+      resultHtml = '<div class="result l">Double Loss</div>';
+    } else {
+      const iWon = (myMatch.result === 'p1' && isP1) || (myMatch.result === 'p2' && !isP1);
+      resultHtml = `<div class="result ${iWon?'w':'l'}">${iWon?'You Won!':'You Lost'}</div>`;
+    }
+  }
+
+  return `
+    <div class="match-hero fade">
+      <div class="label">${roundLabel}</div>
+      <div class="table-num">Table ${tableNum}</div>
+      <div class="vs">
+        <div class="pname you">${esc(myName)}</div>
+        <div class="mvs">VS</div>
+        <div class="pname">${esc(oppName)}</div>
+      </div>
+      ${myMatch.reported ? resultHtml : '<div class="status">Waiting for result...</div>'}
+    </div>
+  `;
+}
+
+function renderHistory() {
+  const t = tournament;
+  let html = '<div class="fade">';
+
+  t.rounds.forEach((round, rIdx) => {
+    round.matches.forEach(m => {
+      if (m.player1 !== myId && m.player2 !== myId) return;
+      const isP1 = m.player1 === myId;
+
+      if (m.bye) {
+        html += `<div class="history-card"><span class="history-round">R${rIdx+1}</span><span class="history-opp">BYE</span><span class="history-result w">WIN</span></div>`;
+        return;
+      }
+
+      const oppId = isP1 ? m.player2 : m.player1;
+      let resLabel = 'PENDING', resCls = 'p';
+      if (m.reported) {
+        if (m.result === 'dl') { resLabel = 'DL'; resCls = 'l'; }
+        else {
+          const iWon = (m.result === 'p1' && isP1) || (m.result === 'p2' && !isP1);
+          resLabel = iWon ? 'WIN' : 'LOSS'; resCls = iWon ? 'w' : 'l';
+        }
+      }
+
+      html += `<div class="history-card"><span class="history-round">R${rIdx+1}</span><span class="history-opp">vs ${esc(pname(oppId))}</span><span class="history-result ${resCls}">${resLabel}</span></div>`;
+    });
+  });
+
+  // Top cut matches
+  if (t.topCutPhase) {
+    t.topCutBracket.forEach(br => {
+      br.matches.forEach(m => {
+        if (m.player1 !== myId && m.player2 !== myId) return;
+        const isP1 = m.player1 === myId;
+        const oppId = isP1 ? m.player2 : m.player1;
+        let resLabel = 'PENDING', resCls = 'p';
+        if (m.reported) {
+          if (m.result === 'dl') { resLabel = 'DL'; resCls = 'l'; }
+          else {
+            const iWon = (m.result === 'p1' && isP1) || (m.result === 'p2' && !isP1);
+            resLabel = iWon ? 'WIN' : 'LOSS'; resCls = iWon ? 'w' : 'l';
+          }
+        }
+        html += `<div class="history-card"><span class="history-round" style="color:var(--acc)">${br.name.slice(0,2).toUpperCase()}</span><span class="history-opp">vs ${esc(pname(oppId))}</span><span class="history-result ${resCls}">${resLabel}</span></div>`;
+      });
+    });
+  }
+
+  html += '</div>';
+  if (html === '<div class="fade"></div>') html = '<div class="card" style="text-align:center;padding:30px;color:var(--t3)">No matches yet</div>';
+  return html;
+}
+
+function renderStandings() {
+  const s = tournament.standings;
+  const rows = s.map((p, i) => {
+    const r = i + 1;
+    const xx = String(p.matchPoints).padStart(2,'0');
+    const yyy = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
+    const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
+    const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
+    const isMe = p.id === myId;
+    return `<tr ${isMe?'class="me"':''}>
+      <td class="c">${r<=3?`<span class="rb r${r}">${r}</span>`:`<span style="color:var(--t3)">${r}</span>`}</td>
+      <td class="n">${esc(p.name)}${isMe?' ◂':''}</td><td class="c">${p.wins}-${p.losses}</td>
+      <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td></tr>`;
+  }).join('');
+  return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+}
+
+load();
+startPolling();
+</script>
+</body>
+</html>

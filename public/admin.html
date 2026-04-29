@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Kyopal — Admin</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A0F;--bg2:#12121A;--bg3:#1A1A26;--bg4:#22222F;
+  --brd:#2A2A3A;--brd2:#4A4A6A;
+  --t1:#E8E8F0;--t2:#8888A0;--t3:#555568;
+  --acc:#00D4AA;--accg:rgba(0,212,170,0.15);--accd:#00A080;
+  --red:#FF4466;--yel:#FFAA22;
+  --gold:#FFD700;--silver:#C0C0C0;--bronze:#CD7F32;
+  --r:10px;--rs:6px;
+}
+html,body{background:var(--bg);color:var(--t1);font-family:'Chakra Petch',sans-serif;min-height:100dvh;-webkit-tap-highlight-color:transparent}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,212,170,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(0,100,212,0.03) 0%,transparent 60%);pointer-events:none}
+.app{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:0 16px 100px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;border-bottom:1px solid var(--brd);margin-bottom:20px}
+.logo{font-size:22px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--acc),#00AAFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{font-weight:400;opacity:.6;font-size:12px;letter-spacing:2px;display:block;background:none;-webkit-text-fill-color:var(--t3)}
+button{font-family:'Chakra Petch',sans-serif;cursor:pointer;border:none;outline:none;transition:all .2s}
+.btn{background:var(--acc);color:var(--bg);font-weight:600;font-size:14px;padding:10px 20px;border-radius:var(--rs)}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.3;pointer-events:none}
+.btn-s{background:var(--bg3);color:var(--t1);font-weight:500;font-size:13px;padding:8px 16px;border-radius:var(--rs);border:1px solid var(--brd)}
+.btn-s:hover{border-color:var(--brd2);background:var(--bg4)}
+.btn-d{background:rgba(255,68,102,0.1);color:var(--red);font-weight:500;font-size:13px;padding:8px 16px;border-radius:var(--rs);border:1px solid rgba(255,68,102,0.2)}
+.btn-d:hover{background:rgba(255,68,102,0.2)}
+.btn-sm{font-size:12px;padding:6px 12px}
+.card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+input,select{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rs);color:var(--t1);font-family:'Chakra Petch',sans-serif;font-size:14px}
+input:focus,select:focus{border-color:var(--acc);outline:none}
+input::placeholder{color:var(--t3)}
+label{display:block;font-size:11px;font-weight:600;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border-radius:var(--r);padding:4px;border:1px solid var(--brd)}
+.tab{flex:1;padding:10px 8px;text-align:center;font-size:13px;font-weight:500;color:var(--t3);border-radius:var(--rs);background:transparent}
+.tab.active{background:var(--bg3);color:var(--acc);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.section{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px}
+.player-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.player-row:last-child{border-bottom:none}
+.player-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);width:22px;text-align:right}
+.player-name{flex:1;font-size:14px;font-weight:500}
+.player-rm{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:transparent;color:var(--t3);font-size:16px;border-radius:50%}
+.player-rm:hover{background:rgba(255,68,102,0.1);color:var(--red)}
+.match-card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:all .3s}
+.match-card.reported{border-color:var(--accd);background:rgba(0,212,170,0.03)}
+.match-card.dl{border-color:var(--red);background:rgba(255,68,102,0.03)}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.ml{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:1px}
+.ms{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+.ms.p{background:rgba(255,170,34,0.1);color:var(--yel)}.ms.d{background:rgba(0,212,170,0.1);color:var(--acc)}.ms.l{background:rgba(255,68,102,0.1);color:var(--red)}
+.mp{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.mpn{flex:1;text-align:center;padding:10px 8px;border-radius:var(--rs);background:var(--bg2);border:2px solid transparent;font-size:14px;font-weight:600}
+.mpn.w{border-color:var(--acc);background:var(--accg)}.mpn.dl{border-color:var(--red);background:rgba(255,68,102,0.08)}
+.mvs{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:2px}
+.ma{display:flex;gap:6px;justify-content:center}
+.round-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-bottom:16px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r)}
+.ri{font-size:13px;color:var(--t2)}.ri strong{color:var(--t1);font-size:15px}
+.rp{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc)}
+.banner{padding:16px;margin-bottom:20px;background:linear-gradient(135deg,rgba(0,212,170,0.06),rgba(0,150,255,0.04));border:1px solid rgba(0,212,170,0.15);border-radius:var(--r);display:flex;align-items:center;justify-content:space-between}
+.bstat{text-align:center}.bv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--acc)}.bl{font-size:10px;color:var(--t3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.standings-table{width:100%;border-collapse:collapse}
+.standings-table th{font-size:10px;font-weight:600;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;padding:8px 10px;text-align:left;border-bottom:1px solid var(--brd)}
+.standings-table th.c{text-align:center}
+.standings-table td{padding:10px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.03);font-family:'JetBrains Mono',monospace}
+.standings-table td.n{font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:14px}
+.standings-table td.c{text-align:center}
+.rb{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700}
+.r1{background:rgba(255,215,0,0.15);color:var(--gold)}.r2{background:rgba(192,192,192,0.15);color:var(--silver)}.r3{background:rgba(205,127,50,0.15);color:var(--bronze)}
+.share-box{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rs);padding:12px;display:flex;gap:8px;align-items:center;margin:12px 0}
+.share-url{flex:1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc);word-break:break-all}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--acc);color:var(--bg);padding:10px 24px;border-radius:var(--r);font-weight:600;font-size:14px;z-index:200;animation:fadeIn .2s}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+.toggle-switch{width:48px;height:28px;border-radius:14px;background:var(--brd);position:relative;cursor:pointer;border:none;transition:background .2s}
+.toggle-switch.on{background:var(--acc)}
+.toggle-switch::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:white;transition:transform .2s}
+.toggle-switch.on::after{transform:translateX(20px)}
+.bracket-title{font-size:13px;font-weight:700;color:var(--acc);letter-spacing:2px;text-transform:uppercase;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(0,212,170,0.2)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fade{animation:fadeIn .3s ease-out}
+.nav-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rs);color:var(--t2);font-size:14px}
+.nav-btn:disabled{opacity:.3}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const API = '/api';
+let adminToken = localStorage.getItem('kyopal_admin_token') || '';
+let tournament = null;
+let tab = 'pairings';
+let viewingRound = 0;
+let toastTimer = null;
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (adminToken) headers['X-Admin-Token'] = adminToken;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function toast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 2000);
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function pname(id) { const p = tournament?.players.find(x => x.id === id); return p ? p.name : '???'; }
+
+async function load() {
+  try {
+    tournament = await api('/admin/tournament');
+    viewingRound = tournament.currentRound;
+    render();
+  } catch {
+    tournament = null;
+    render();
+  }
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (!adminToken || !tournament) {
+    app.innerHTML = renderLogin();
+  } else if (!tournament.started) {
+    app.innerHTML = renderSetup();
+  } else {
+    app.innerHTML = renderTournament();
+  }
+}
+
+// ── Login / Create ──
+function renderLogin() {
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>ADMIN PANEL</span></div></div>
+    <div class="card">
+      <label>Admin Password</label>
+      <input type="password" id="pw" placeholder="Enter admin password">
+    </div>
+    <div class="card">
+      <label>Tournament Name</label>
+      <input type="text" id="tname" placeholder="e.g. Friday Locals — Week 12">
+    </div>
+    <button class="btn" style="width:100%;padding:14px;font-size:16px" onclick="createTournament()">⚡ Create Tournament</button>
+    <div style="margin-top:16px;text-align:center;color:var(--t3);font-size:12px">Or resume with existing token:</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input type="text" id="token" placeholder="Paste admin token">
+      <button class="btn-s" onclick="resumeWithToken()">Resume</button>
+    </div>
+  `;
+}
+
+async function createTournament() {
+  const pw = document.getElementById('pw').value;
+  const name = document.getElementById('tname').value;
+  try {
+    const data = await api('/admin/create', { method: 'POST', body: JSON.stringify({ adminPassword: pw, name }) });
+    adminToken = data.adminToken;
+    localStorage.setItem('kyopal_admin_token', adminToken);
+    toast('Tournament created!');
+    await load();
+  } catch (e) { toast(e.message); }
+}
+
+async function resumeWithToken() {
+  adminToken = document.getElementById('token').value.trim();
+  localStorage.setItem('kyopal_admin_token', adminToken);
+  await load();
+}
+
+// ── Setup ──
+function renderSetup() {
+  const t = tournament;
+  const playerRows = t.players.map((p, i) => `
+    <div class="player-row">
+      <span class="player-num">${i+1}</span>
+      <span class="player-name">${esc(p.name)}</span>
+      <button class="player-rm" onclick="removePlayer('${p.id}')">×</button>
+    </div>`).join('');
+
+  const rec = getRecRounds(t.players.length);
+  const shareUrl = location.origin + '/';
+
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>ADMIN PANEL</span></div></div>
+    <div class="card">
+      <label>Tournament Name</label>
+      <input type="text" value="${esc(t.name)}" onchange="updateSettings({name:this.value})">
+    </div>
+
+    <div class="section">Share Link with Players</div>
+    <div class="share-box">
+      <span class="share-url">${shareUrl}</span>
+      <button class="btn-s btn-sm" onclick="navigator.clipboard.writeText('${shareUrl}');toast('Copied!')">Copy</button>
+    </div>
+
+    <div class="card" style="padding:12px 16px">
+      <div class="toggle-row">
+        <div>
+          <div style="font-size:14px;font-weight:500">Registration ${t.registrationLocked ? '🔒 Locked' : '🟢 Open'}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${t.players.length} players registered</div>
+        </div>
+        <button class="btn-s btn-sm" onclick="toggleLock()">${t.registrationLocked ? 'Unlock' : 'Lock'}</button>
+      </div>
+    </div>
+
+    <div class="section">Players (${t.players.length})</div>
+    <div class="card" style="padding:0;${t.players.length?'':'padding:20px'}">
+      ${t.players.length ? playerRows : '<div style="text-align:center;padding:30px;color:var(--t3)">Waiting for players to join...</div>'}
+    </div>
+
+    ${t.players.length >= 2 ? `
+    <div class="card">
+      <label>Number of Rounds</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" value="${t.totalRounds || rec}" min="1" max="9" style="width:80px"
+          onchange="updateSettings({totalRounds:parseInt(this.value)})">
+        <span style="font-size:12px;color:var(--t3)">Recommended: ${rec}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toggle-row">
+        <div><div style="font-size:14px;font-weight:500">Top Cut</div><div style="font-size:11px;color:var(--t3);margin-top:2px">Single elimination after Swiss</div></div>
+        <button class="toggle-switch ${t.topCutEnabled?'on':''}" onclick="updateSettings({topCutEnabled:!tournament.topCutEnabled})"></button>
+      </div>
+      ${t.topCutEnabled ? `<div style="margin-top:12px"><label>Top Cut Size</label>
+        <select onchange="updateSettings({topCutSize:parseInt(this.value)})">
+          <option value="4" ${t.topCutSize===4?'selected':''}>Top 4</option>
+          <option value="2" ${t.topCutSize===2?'selected':''}>Top 2</option>
+        </select></div>` : ''}
+    </div>` : ''}
+
+    <button class="btn" style="width:100%;padding:14px;font-size:16px;margin-top:8px"
+      ${t.players.length >= 4 ? '' : 'disabled'}
+      onclick="startTournament()">
+      ${t.players.length >= 4 ? '⚡ Start Tournament' : 'Need at least 4 players'}
+    </button>
+
+    <div style="margin-top:12px;text-align:center">
+      <button class="btn-s btn-sm" onclick="load()">↻ Refresh</button>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <label>Admin Token (save this!)</label>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc);word-break:break-all">${adminToken}</div>
+    </div>
+  `;
+}
+
+function getRecRounds(n) {
+  if (n <= 4) return 3; if (n <= 8) return 3; if (n <= 16) return 4;
+  if (n <= 32) return 5; if (n <= 64) return 6; return 7;
+}
+
+async function updateSettings(s) {
+  try { await api('/admin/settings', { method: 'POST', body: JSON.stringify(s) }); await load(); } catch(e) { toast(e.message); }
+}
+async function toggleLock() {
+  try { await api('/admin/lock-registration', { method: 'POST' }); await load(); } catch(e) { toast(e.message); }
+}
+async function removePlayer(id) {
+  try { await api('/admin/remove-player', { method: 'POST', body: JSON.stringify({ playerId: id }) }); await load(); } catch(e) { toast(e.message); }
+}
+async function startTournament() {
+  try { await api('/admin/start', { method: 'POST' }); toast('Tournament started!'); await load(); } catch(e) { toast(e.message); }
+}
+
+// ── Tournament ──
+function renderTournament() {
+  const t = tournament;
+  const isSwissDone = t.currentRound > t.totalRounds || t.topCutPhase || t.finished;
+
+  return `
+    <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div>
+      <button class="btn-s btn-sm" onclick="confirmReset()">⟲ Reset</button>
+    </div>
+    <div class="banner">
+      <div class="bstat"><div class="bv">${t.players.length}</div><div class="bl">Players</div></div>
+      <div class="bstat"><div class="bv">${t.topCutPhase?'TC':(t.finished?'✓':t.currentRound)}</div><div class="bl">${t.topCutPhase?'Top Cut':(t.finished?'Complete':'Round of '+t.totalRounds)}</div></div>
+      <div class="bstat"><div class="bv">${t.totalRounds}${t.topCutEnabled?'+TC':''}</div><div class="bl">Format</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${tab==='pairings'?'active':''}" onclick="tab='pairings';render()">${t.topCutPhase?'Bracket':'Pairings'}</button>
+      <button class="tab ${tab==='standings'?'active':''}" onclick="tab='standings';render()">Standings</button>
+    </div>
+    ${tab === 'pairings' ? (t.topCutPhase ? renderBracket() : renderPairings()) : renderStandings()}
+    <div style="margin-top:12px;text-align:center"><button class="btn-s btn-sm" onclick="load()">↻ Refresh</button></div>
+  `;
+}
+
+function renderPairings() {
+  const t = tournament;
+  if (t.finished) return renderResults();
+
+  const round = t.rounds[viewingRound - 1];
+  if (!round) return '';
+
+  const reported = round.matches.filter(m => m.reported).length;
+  const total = round.matches.length;
+  const allDone = reported === total;
+  const isLatest = viewingRound === t.rounds.length;
+  const canNext = allDone && isLatest && t.currentRound < t.totalRounds;
+  const swissDone = allDone && isLatest && t.currentRound === t.totalRounds;
+
+  let html = `
+    <div class="round-bar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="nav-btn" ${viewingRound<=1?'disabled':''} onclick="viewingRound--;render()">◂</button>
+        <div class="ri"><strong>Round ${viewingRound}</strong> / ${t.totalRounds}</div>
+        <button class="nav-btn" ${viewingRound>=t.rounds.length?'disabled':''} onclick="viewingRound++;render()">▸</button>
+      </div>
+      <div class="rp">${reported}/${total}</div>
+    </div><div class="fade">`;
+
+  round.matches.forEach((m, i) => { html += renderMatch(m, i); });
+  html += '</div>';
+
+  if (canNext) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="nextRound()">▸ Start Round ${t.currentRound+1}</button>`;
+  if (swissDone && t.topCutEnabled) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="startTopCut()">🏆 Start Top ${t.topCutSize} Cut</button>`;
+  if (swissDone && !t.topCutEnabled) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="finish()">🏆 Finish Tournament</button>`;
+
+  return html;
+}
+
+function renderMatch(m, i) {
+  if (m.bye) return `<div class="match-card reported"><div class="mh"><span class="ml">TABLE ${i+1}</span><span class="ms d">BYE</span></div><div class="mp"><div class="mpn w">${esc(pname(m.player1))}</div><span class="mvs">BYE</span><div class="mpn" style="opacity:.2">—</div></div></div>`;
+  if (!m.player1||!m.player2) return `<div class="match-card"><div class="mh"><span class="ml">MATCH ${i+1}</span><span class="ms p">WAITING</span></div><div class="mp"><div class="mpn" style="opacity:.3">${m.player1?esc(pname(m.player1)):'TBD'}</div><span class="mvs">VS</span><div class="mpn" style="opacity:.3">${m.player2?esc(pname(m.player2)):'TBD'}</div></div></div>`;
+
+  const isDL = m.reported && m.result === 'dl';
+  const p1W = m.reported && m.result === 'p1';
+  const p2W = m.reported && m.result === 'p2';
+  const cls = m.reported ? (isDL ? 'dl' : 'reported') : '';
+  const st = m.reported ? (isDL ? 'Double Loss' : (p1W ? esc(pname(m.player1))+' Won' : esc(pname(m.player2))+' Won')) : 'Pending';
+  const sc = m.reported ? (isDL ? 'l' : 'd') : 'p';
+
+  return `<div class="match-card ${cls}"><div class="mh"><span class="ml">TABLE ${i+1}</span><span class="ms ${sc}">${st}</span></div>
+    <div class="mp"><div class="mpn ${p1W?'w':(isDL?'dl':'')}">${esc(pname(m.player1))}</div><span class="mvs">VS</span><div class="mpn ${p2W?'w':(isDL?'dl':'')}">${esc(pname(m.player2))}</div></div>
+    <div class="ma">${m.reported
+      ? `<button class="btn-s btn-sm" onclick="unreport('${m.id}')">Edit</button>`
+      : `<button class="btn btn-sm" style="flex:1" onclick="report('${m.id}','p1')">${esc(pname(m.player1))} Won</button>
+         <button class="btn btn-sm" style="flex:1" onclick="report('${m.id}','p2')">${esc(pname(m.player2))} Won</button>
+         <button class="btn-d btn-sm" style="flex:.8" onclick="report('${m.id}','dl')">Double Loss</button>`}
+    </div></div>`;
+}
+
+function renderBracket() {
+  const t = tournament;
+  if (t.finished) return renderResults();
+
+  let html = '<div class="fade">';
+  const allDone = t.topCutBracket.every(r => r.matches.every(m => m.reported));
+
+  t.topCutBracket.forEach(br => {
+    html += `<div class="bracket-title">${br.name}</div>`;
+    br.matches.forEach((m, i) => { html += renderMatch(m, i); });
+  });
+
+  if (t.topCutSize === 4) {
+    const semis = t.topCutBracket[0];
+    const finals = t.topCutBracket[1];
+    const semisDone = semis.matches.every(m => m.reported);
+    if (semisDone && !finals.matches[0].player1) {
+      html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="advanceFinals()">▸ Advance to Finals</button>`;
+    }
+  }
+  if (allDone) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="finish()">🏆 Finish Tournament</button>`;
+
+  html += '</div>';
+  return html;
+}
+
+function renderResults() {
+  const t = tournament;
+  const s = t.standings;
+  const top3 = s.slice(0, 3);
+  return `<div class="card fade" style="text-align:center;padding:30px">
+    <div style="font-size:36px;margin-bottom:12px">🏆</div>
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px">Tournament Complete!</div>
+    <div style="font-size:13px;color:var(--t2);margin-bottom:20px">${esc(t.name)}</div>
+    <div style="display:flex;justify-content:center;gap:20px">${top3.map((p,i)=>`<div style="text-align:center"><div class="rb r${i+1}" style="width:36px;height:36px;font-size:14px;margin:0 auto 6px">${i+1}</div><div style="font-size:14px;font-weight:600">${esc(p.name)}</div><div style="font-size:11px;color:var(--t3)">${p.wins}-${p.losses}</div></div>`).join('')}</div>
+  </div>`;
+}
+
+function renderStandings() {
+  const s = tournament.standings;
+  const tc = tournament.topCutEnabled ? tournament.topCutSize : 0;
+  const rows = s.map((p, i) => {
+    const r = i + 1;
+    const xx = String(p.matchPoints).padStart(2,'0');
+    const yyy = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
+    const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
+    const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
+    const cut = r <= tc && !tournament.topCutPhase && !tournament.finished;
+    return `<tr ${cut?'style="color:var(--acc)"':''}>
+      <td class="c">${r<=3?`<span class="rb r${r}">${r}</span>`:`<span style="color:var(--t3)">${r}</span>`}</td>
+      <td class="n">${esc(p.name)}</td><td class="c">${p.wins}-${p.losses}</td>
+      <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td></tr>`;
+  }).join('');
+  return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
+  ${tc>0&&!tournament.topCutPhase&&!tournament.finished?`<div style="margin-top:8px;font-size:10px;color:var(--acc);padding:0 4px">▲ Top ${tc} advance</div>`:''}
+  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+}
+
+// ── Actions ──
+async function report(id, result) { try { await api('/admin/report',{method:'POST',body:JSON.stringify({matchId:id,result})}); await load(); } catch(e){toast(e.message);} }
+async function unreport(id) { try { await api('/admin/unreport',{method:'POST',body:JSON.stringify({matchId:id})}); await load(); } catch(e){toast(e.message);} }
+async function nextRound() { try { await api('/admin/next-round',{method:'POST'}); toast('Round started!'); await load(); } catch(e){toast(e.message);} }
+async function startTopCut() { try { await api('/admin/start-top-cut',{method:'POST'}); toast('Top cut!'); await load(); } catch(e){toast(e.message);} }
+async function advanceFinals() { try { await api('/admin/advance-finals',{method:'POST'}); await load(); } catch(e){toast(e.message);} }
+async function finish() { try { await api('/admin/finish',{method:'POST'}); toast('Tournament complete!'); await load(); } catch(e){toast(e.message);} }
+async function confirmReset() {
+  if (confirm('Reset tournament? All data will be lost.')) {
+    try { const d = await api('/admin/reset',{method:'POST'}); adminToken=d.adminToken; localStorage.setItem('kyopal_admin_token',adminToken); toast('Reset!'); await load(); } catch(e){toast(e.message);}
+  }
+}
+
+load();
+</script>
+</body>
+</html>
