@@ -96,6 +96,7 @@ let tournament = null;
 let tab = 'pairings';
 let viewingRound = 0;
 let toastTimer = null;
+let currentShareUrl = '';
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -192,7 +193,8 @@ function renderSetup() {
     </div>`).join('');
 
   const rec = getRecRounds(t.players.length);
-  const shareUrl = location.origin + '/';
+  const shareUrl = location.origin + '/t/' + t.id;
+  currentShareUrl = shareUrl;
 
   return `
     <div class="header"><div class="logo">KYOPAL<span>ADMIN PANEL</span></div></div>
@@ -458,7 +460,7 @@ function generateQR() {
   if (!el) return;
   el.innerHTML = '';
   new QRCode(el, {
-    text: location.origin + '/',
+    text: currentShareUrl,
     width: 180,
     height: 180,
     colorDark: '#0A0A0F',

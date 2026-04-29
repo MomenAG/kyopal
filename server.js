@@ -562,6 +562,10 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+app.get('/t/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'player.html'));
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'player.html'));
 });

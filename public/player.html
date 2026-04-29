@@ -88,6 +88,7 @@ let myId = localStorage.getItem('kyopal_player_id') || '';
 let myName = localStorage.getItem('kyopal_player_name') || '';
 let tab = 'match';
 let pollTimer = null;
+let expiredLink = false;
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -110,10 +111,17 @@ function esc(s) { const d = document.createElement('div'); d.textContent = s; re
 function pname(id) { const p = tournament?.players.find(x => x.id === id); return p ? p.name : '???'; }
 
 async function load() {
+  const urlId = location.pathname.match(/^\/t\/([^/]+)/)?.[1] || null;
   try {
     tournament = await api('/tournament');
+    if (urlId && tournament.id !== urlId) {
+      expiredLink = true;
+      tournament = null;
+    } else {
+      expiredLink = false;
+    }
     render();
-  } catch { render(); }
+  } catch { expiredLink = false; render(); }
 }
 
 function startPolling() {
@@ -125,7 +133,8 @@ function stopPolling() { if (pollTimer) clearInterval(pollTimer); }
 function render() {
   const app = document.getElementById('app');
   if (!tournament) {
-    app.innerHTML = '<div class="header"><div class="logo">KYOPAL<span>TOURNAMENT MANAGER</span></div></div><div class="card" style="text-align:center;padding:40px"><div style="color:var(--t3);font-size:14px">No active tournament</div></div>';
+    const msg = expiredLink ? 'This tournament link has expired' : 'No active tournament';
+    app.innerHTML = `<div class="header"><div class="logo">KYOPAL<span>TOURNAMENT MANAGER</span></div></div><div class="card" style="text-align:center;padding:40px"><div style="color:var(--t3);font-size:14px">${msg}</div></div>`;
     return;
   }
 
