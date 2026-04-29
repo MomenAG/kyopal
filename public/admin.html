@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Kyopal — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -135,6 +136,7 @@ function render() {
     app.innerHTML = renderLogin();
   } else if (!tournament.started) {
     app.innerHTML = renderSetup();
+    generateQR();
   } else {
     app.innerHTML = renderTournament();
   }
@@ -254,6 +256,13 @@ function renderSetup() {
     <div class="card" style="margin-top:20px">
       <label>Admin Token (save this!)</label>
       <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--acc);word-break:break-all">${adminToken}</div>
+    </div>
+    <div class="card" style="margin-top:20px;text-align:center">
+      <label style="margin-bottom:14px">QR Code — Scan to Join</label>
+      <div id="qr-code" style="display:inline-block;background:#fff;padding:10px;border-radius:var(--rs)"></div>
+      <div style="margin-top:12px">
+        <button class="btn-s btn-sm" onclick="downloadQR()">Download QR</button>
+      </div>
     </div>
   `;
 }
@@ -442,6 +451,29 @@ async function confirmCancel() {
       render();
     } catch(e){toast(e.message);}
   }
+}
+
+function generateQR() {
+  const el = document.getElementById('qr-code');
+  if (!el) return;
+  el.innerHTML = '';
+  new QRCode(el, {
+    text: location.origin + '/',
+    width: 180,
+    height: 180,
+    colorDark: '#0A0A0F',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qr-code canvas');
+  if (!canvas) return;
+  const a = document.createElement('a');
+  a.download = 'kyopal-qr.png';
+  a.href = canvas.toDataURL();
+  a.click();
 }
 
 load();
