@@ -283,6 +283,7 @@ function renderTournament() {
 
   return `
     <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div>
+      <button class="btn-s btn-sm" onclick="confirmEnd()">End</button>
       <button class="btn-s btn-sm" onclick="confirmReset()">⟲ Reset</button>
     </div>
     <div class="banner">
@@ -422,6 +423,11 @@ async function finish() { try { await api('/admin/finish',{method:'POST'}); toas
 async function confirmReset() {
   if (confirm('Reset tournament? All data will be lost.')) {
     try { const d = await api('/admin/reset',{method:'POST'}); adminToken=d.adminToken; localStorage.setItem('kyopal_admin_token',adminToken); toast('Reset!'); await load(); } catch(e){toast(e.message);}
+  }
+}
+async function confirmEnd() {
+  if (confirm('End tournament? Players will see final results.')) {
+    try { await api('/admin/finish',{method:'POST'}); toast('Tournament ended!'); await load(); } catch(e){toast(e.message);}
   }
 }
 
