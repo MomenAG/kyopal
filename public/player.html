@@ -137,6 +137,7 @@ function render() {
   }
 
   if (!myId) {
+    stopPolling();
     app.innerHTML = renderJoin();
   } else if (!tournament.started) {
     app.innerHTML = renderWaiting();
@@ -393,7 +394,6 @@ function renderStandings() {
 }
 
 load();
-startPolling();
 </script>
 </body>
 </html>
