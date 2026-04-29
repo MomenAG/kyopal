@@ -285,6 +285,20 @@ app.post('/api/tournament/join', (req, res) => {
   res.json({ player, playerCount: t.players.length });
 });
 
+// Player self-remove
+app.post('/api/tournament/leave', (req, res) => {
+  const t = loadTournament();
+  if (!t) return res.status(404).json({ error: 'No tournament' });
+  if (t.started) return res.status(400).json({ error: 'Tournament already started' });
+
+  const { playerId } = req.body;
+  if (!playerId) return res.status(400).json({ error: 'Player ID required' });
+
+  t.players = t.players.filter(p => p.id !== playerId);
+  saveTournament(t);
+  res.json({ success: true, playerCount: t.players.length });
+});
+
 // ── Admin Routes ──
 
 // Create new tournament (resets everything)

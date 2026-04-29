@@ -212,7 +212,10 @@ function renderWaiting() {
   `;
 }
 
-function leavePlayer() {
+async function leavePlayer() {
+  try {
+    await api('/tournament/leave', { method: 'POST', body: JSON.stringify({ playerId: myId }) });
+  } catch (e) { console.error(e); }
   myId = ''; myName = '';
   localStorage.removeItem('kyopal_player_id');
   localStorage.removeItem('kyopal_player_name');
