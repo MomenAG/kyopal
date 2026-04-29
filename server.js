@@ -544,6 +544,12 @@ app.post('/api/admin/finish', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// Cancel tournament (delete entirely)
+app.post('/api/admin/cancel', requireAdmin, (req, res) => {
+  if (fs.existsSync(DATA_FILE)) fs.unlinkSync(DATA_FILE);
+  res.json({ success: true });
+});
+
 // Reset tournament
 app.post('/api/admin/reset', requireAdmin, (req, res) => {
   const t = defaultTournament();

@@ -284,6 +284,7 @@ function renderTournament() {
   return `
     <div class="header"><div class="logo">KYOPAL<span>${esc(t.name)}</span></div>
       <button class="btn-s btn-sm" onclick="confirmEnd()">End</button>
+      <button class="btn-s btn-sm" onclick="confirmCancel()">Cancel</button>
       <button class="btn-s btn-sm" onclick="confirmReset()">⟲ Reset</button>
     </div>
     <div class="banner">
@@ -428,6 +429,18 @@ async function confirmReset() {
 async function confirmEnd() {
   if (confirm('End tournament? Players will see final results.')) {
     try { await api('/admin/finish',{method:'POST'}); toast('Tournament ended!'); await load(); } catch(e){toast(e.message);}
+  }
+}
+async function confirmCancel() {
+  if (confirm('Cancel tournament? This will DELETE it completely. Players will see "No active tournament".')) {
+    try {
+      await api('/admin/cancel',{method:'POST'});
+      adminToken = '';
+      localStorage.removeItem('kyopal_admin_token');
+      toast('Tournament cancelled');
+      tournament = null;
+      render();
+    } catch(e){toast(e.message);}
   }
 }
 
