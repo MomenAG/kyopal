@@ -191,9 +191,9 @@ function generatePairings(tournament) {
   let playerList;
 
   if (isFirstRound) {
-    playerList = shuffle(tournament.players);
+    playerList = shuffle(tournament.players.filter(p => !p.kicked));
   } else {
-    playerList = [...getStandings(tournament)];
+    playerList = getStandings(tournament).filter(p => !p.kicked);
   }
 
   const matches = [];
@@ -330,6 +330,54 @@ app.post('/api/admin/lock-registration', requireAdmin, (req, res) => {
   t.registrationLocked = !t.registrationLocked;
   saveTournament(t);
   res.json({ registrationLocked: t.registrationLocked });
+});
+
+// Kick a player during the tournament
+app.post('/api/admin/kick-player', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  if (!t.started) return res.status(400).json({ error: 'Tournament not started' });
+  if (t.finished) return res.status(400).json({ error: 'Tournament already finished' });
+
+  const { playerId } = req.body;
+  const player = t.players.find(p => p.id === playerId);
+  if (!player) return res.status(404).json({ error: 'Player not found' });
+  if (player.kicked) return res.status(400).json({ error: 'Player already kicked' });
+
+  player.kicked = true;
+
+  // Auto-report their current unreported match — opponent wins
+  const allRounds = t.topCutPhase ? t.topCutBracket : t.rounds;
+  for (const round of allRounds) {
+    const match = round.matches.find(m =>
+      !m.reported && (m.player1 === playerId || m.player2 === playerId)
+    );
+    if (match) {
+      match.reported = true;
+      match.result = match.player1 === playerId ? 'p2' : 'p1';
+      break;
+    }
+  }
+
+  saveTournament(t);
+  const standings = getStandings(t);
+  res.json({ success: true, standings });
+});
+
+// Reinstate a kicked player
+app.post('/api/admin/reinstate-player', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  if (!t.started) return res.status(400).json({ error: 'Tournament not started' });
+  if (t.finished) return res.status(400).json({ error: 'Tournament already finished' });
+
+  const { playerId } = req.body;
+  const player = t.players.find(p => p.id === playerId);
+  if (!player) return res.status(404).json({ error: 'Player not found' });
+  if (!player.kicked) return res.status(400).json({ error: 'Player is not kicked' });
+
+  player.kicked = false;
+  saveTournament(t);
+  const standings = getStandings(t);
+  res.json({ success: true, standings });
 });
 
 // Remove a player (before tournament starts)

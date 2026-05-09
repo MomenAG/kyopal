@@ -85,6 +85,7 @@ label{display:block;font-size:11px;font-weight:600;color:var(--t2);letter-spacin
 .fade{animation:fadeIn .3s ease-out}
 .nav-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rs);color:var(--t2);font-size:14px}
 .nav-btn:disabled{opacity:.3}
+.kicked-badge{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--red);background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);border-radius:3px;padding:1px 5px;vertical-align:middle;margin-left:6px;font-family:'Chakra Petch',sans-serif}
 </style>
 </head>
 <body>
@@ -408,24 +409,43 @@ function renderResults() {
 function renderStandings() {
   const s = tournament.standings;
   const tc = tournament.topCutEnabled ? tournament.topCutSize : 0;
+  const canAct = !tournament.finished;
   const rows = s.map((p, i) => {
     const r = i + 1;
     const xx = String(p.matchPoints).padStart(2,'0');
     const yyy = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
     const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
     const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
-    const cut = r <= tc && !tournament.topCutPhase && !tournament.finished;
-    return `<tr ${cut?'style="color:var(--acc)"':''}>
+    const cut = r <= tc && !tournament.topCutPhase && !tournament.finished && !p.kicked;
+    const rowStyle = p.kicked ? 'style="opacity:.45"' : (cut ? 'style="color:var(--acc)"' : '');
+    const kickedBadge = p.kicked ? '<span class="kicked-badge">KICKED</span>' : '';
+    const actionBtn = canAct
+      ? (p.kicked
+          ? `<button class="player-rm" style="color:var(--acc);font-size:13px" title="Reinstate player" onclick="reinstatePlayer('${p.id}')">↩</button>`
+          : `<button class="player-rm" title="Kick player" onclick="kickPlayer('${p.id}')">✕</button>`)
+      : '';
+    return `<tr ${rowStyle}>
       <td class="c">${r<=3?`<span class="rb r${r}">${r}</span>`:`<span style="color:var(--t3)">${r}</span>`}</td>
-      <td class="n">${esc(p.name)}</td><td class="c">${p.wins}-${p.losses}</td>
-      <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td></tr>`;
+      <td class="n">${esc(p.name)}${kickedBadge}</td><td class="c">${p.wins}-${p.losses}</td>
+      <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td>
+      <td class="c">${actionBtn}</td></tr>`;
   }).join('');
-  return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
+  return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
   ${tc>0&&!tournament.topCutPhase&&!tournament.finished?`<div style="margin-top:8px;font-size:10px;color:var(--acc);padding:0 4px">▲ Top ${tc} advance</div>`:''}
   <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
 }
 
 // ── Actions ──
+async function kickPlayer(id) {
+  const p = tournament.players.find(x => x.id === id);
+  if (!confirm(`Kick ${p ? p.name : 'this player'}? Their current unreported match will be auto-reported as a loss.`)) return;
+  try { await api('/admin/kick-player',{method:'POST',body:JSON.stringify({playerId:id})}); toast('Player kicked'); await load(); } catch(e){toast(e.message);}
+}
+async function reinstatePlayer(id) {
+  const p = tournament.players.find(x => x.id === id);
+  if (!confirm(`Reinstate ${p ? p.name : 'this player'}? They will be included in future pairings.`)) return;
+  try { await api('/admin/reinstate-player',{method:'POST',body:JSON.stringify({playerId:id})}); toast('Player reinstated'); await load(); } catch(e){toast(e.message);}
+}
 async function report(id, result) { try { await api('/admin/report',{method:'POST',body:JSON.stringify({matchId:id,result})}); await load(); } catch(e){toast(e.message);} }
 async function unreport(id) { try { await api('/admin/unreport',{method:'POST',body:JSON.stringify({matchId:id})}); await load(); } catch(e){toast(e.message);} }
 async function nextRound() { try { await api('/admin/next-round',{method:'POST'}); toast('Round started!'); await load(); } catch(e){toast(e.message);} }

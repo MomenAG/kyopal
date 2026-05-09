@@ -251,6 +251,15 @@ function renderPlayerView() {
 function renderMyMatch() {
   const t = tournament;
 
+  const myPlayer = t.players.find(p => p.id === myId);
+  if (myPlayer?.kicked) {
+    return `<div class="card fade" style="text-align:center;padding:36px">
+      <div style="font-size:28px;margin-bottom:12px">⊘</div>
+      <div style="font-size:16px;font-weight:600;color:var(--red);margin-bottom:8px">Removed from tournament</div>
+      <div style="font-size:13px;color:var(--t3)">The tournament director has removed you from active play.</div>
+    </div>`;
+  }
+
   if (t.finished) {
     const s = t.standings;
     const myRank = s.findIndex(p => p.id === myId) + 1;
@@ -396,9 +405,11 @@ function renderStandings() {
     const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
     const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
     const isMe = p.id === myId;
-    return `<tr ${isMe?'class="me"':''}>
+    const kickedBadge = p.kicked ? '<span style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--red);background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);border-radius:3px;padding:1px 5px;margin-left:6px">KICKED</span>' : '';
+    const rowAttr = p.kicked ? 'style="opacity:.45"' : (isMe ? 'class="me"' : '');
+    return `<tr ${rowAttr}>
       <td class="c">${r<=3?`<span class="rb r${r}">${r}</span>`:`<span style="color:var(--t3)">${r}</span>`}</td>
-      <td class="n">${esc(p.name)}${isMe?' ◂':''}</td><td class="c">${p.wins}-${p.losses}</td>
+      <td class="n">${esc(p.name)}${isMe&&!p.kicked?' ◂':''}${kickedBadge}</td><td class="c">${p.wins}-${p.losses}</td>
       <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td></tr>`;
   }).join('');
   return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
