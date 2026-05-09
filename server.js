@@ -407,6 +407,63 @@ app.post('/api/admin/settings', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// Start tournament with custom round 1 pairings
+app.post('/api/admin/custom-start', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  if (t.started) return res.status(400).json({ error: 'Already started' });
+  if (t.players.length < 4) return res.status(400).json({ error: 'Need at least 4 players' });
+
+  const { matches, byePlayerId } = req.body;
+  if (!Array.isArray(matches)) return res.status(400).json({ error: 'matches must be an array' });
+
+  const allPlayerIds = t.players.map(p => p.id);
+  const covered = new Set();
+
+  if (byePlayerId) {
+    if (!allPlayerIds.includes(byePlayerId))
+      return res.status(400).json({ error: 'Bye player is not a registered player' });
+    covered.add(byePlayerId);
+  }
+
+  for (const m of matches) {
+    if (!m.player1 || !m.player2) return res.status(400).json({ error: 'Each match needs two players' });
+    if (!allPlayerIds.includes(m.player1) || !allPlayerIds.includes(m.player2))
+      return res.status(400).json({ error: 'Invalid player in match' });
+    if (m.player1 === m.player2) return res.status(400).json({ error: 'Player cannot play themselves' });
+    if (covered.has(m.player1) || covered.has(m.player2))
+      return res.status(400).json({ error: 'Player assigned to multiple matches' });
+    covered.add(m.player1);
+    covered.add(m.player2);
+  }
+
+  if (covered.size !== allPlayerIds.length)
+    return res.status(400).json({ error: 'Not all players are assigned' });
+
+  if (!t.totalRounds) t.totalRounds = getRecommendedRounds(t.players.length);
+  t.started = true;
+  t.registrationLocked = true;
+  t.currentRound = 1;
+
+  const roundMatches = [];
+  if (byePlayerId) {
+    roundMatches.push({
+      id: crypto.randomUUID(), player1: byePlayerId, player2: null,
+      result: 'p1', reported: true, bye: true,
+    });
+  }
+  for (const m of matches) {
+    roundMatches.push({
+      id: crypto.randomUUID(), player1: m.player1, player2: m.player2,
+      result: null, reported: false, bye: false,
+    });
+  }
+
+  t.rounds = [{ round: 1, matches: roundMatches }];
+  saveTournament(t);
+  const standings = getStandings(t);
+  res.json({ ...t, standings, adminToken: undefined });
+});
+
 // Start tournament
 app.post('/api/admin/start', requireAdmin, (req, res) => {
   const t = req.tournament;
@@ -554,6 +611,117 @@ app.post('/api/admin/start-top-cut', requireAdmin, (req, res) => {
       matches: [
         { id: crypto.randomUUID(), player1: cutPlayers[0].id, player2: cutPlayers[1].id, result: null, reported: false, bye: false },
       ]
+    });
+  }
+
+  saveTournament(t);
+  res.json({ success: true });
+});
+
+// Custom round — admin-defined pairings instead of Swiss algorithm
+app.post('/api/admin/custom-round', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  if (!t.started || t.topCutPhase || t.finished)
+    return res.status(400).json({ error: 'Cannot custom-pair in current state' });
+
+  const current = t.rounds[t.currentRound - 1];
+  if (!current || !current.matches.every(m => m.reported))
+    return res.status(400).json({ error: 'Not all matches in current round are reported' });
+  if (t.currentRound >= t.totalRounds)
+    return res.status(400).json({ error: 'All Swiss rounds complete' });
+
+  const { matches, byePlayerId } = req.body;
+  if (!Array.isArray(matches)) return res.status(400).json({ error: 'matches must be an array' });
+
+  const activePlayers = t.players.filter(p => !p.kicked).map(p => p.id);
+  const covered = new Set();
+
+  if (byePlayerId) {
+    if (!activePlayers.includes(byePlayerId))
+      return res.status(400).json({ error: 'Bye player is not an active player' });
+    covered.add(byePlayerId);
+  }
+
+  for (const m of matches) {
+    if (!m.player1 || !m.player2) return res.status(400).json({ error: 'Each match needs two players' });
+    if (!activePlayers.includes(m.player1) || !activePlayers.includes(m.player2))
+      return res.status(400).json({ error: 'Invalid player in match' });
+    if (m.player1 === m.player2) return res.status(400).json({ error: 'Player cannot play themselves' });
+    if (covered.has(m.player1) || covered.has(m.player2))
+      return res.status(400).json({ error: 'Player assigned to multiple matches' });
+    covered.add(m.player1);
+    covered.add(m.player2);
+  }
+
+  if (covered.size !== activePlayers.length)
+    return res.status(400).json({ error: 'Not all active players are assigned' });
+
+  const roundMatches = [];
+  if (byePlayerId) {
+    roundMatches.push({
+      id: crypto.randomUUID(), player1: byePlayerId, player2: null,
+      result: 'p1', reported: true, bye: true,
+    });
+  }
+  for (const m of matches) {
+    roundMatches.push({
+      id: crypto.randomUUID(), player1: m.player1, player2: m.player2,
+      result: null, reported: false, bye: false,
+    });
+  }
+
+  t.currentRound++;
+  t.rounds.push({ round: t.currentRound, matches: roundMatches });
+  saveTournament(t);
+  const standings = getStandings(t);
+  res.json({ ...t, standings, adminToken: undefined });
+});
+
+// Custom top cut — admin defines bracket seeding instead of auto-seeding
+app.post('/api/admin/custom-top-cut', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  if (!t.topCutEnabled || t.topCutPhase || t.finished)
+    return res.status(400).json({ error: 'Cannot set custom top cut in current state' });
+
+  const { matches } = req.body;
+  if (!Array.isArray(matches)) return res.status(400).json({ error: 'matches must be an array' });
+
+  const cutPlayerIds = getStandings(t).filter(p => !p.kicked).slice(0, t.topCutSize).map(p => p.id);
+  const covered = new Set();
+
+  for (const m of matches) {
+    if (!cutPlayerIds.includes(m.player1) || !cutPlayerIds.includes(m.player2))
+      return res.status(400).json({ error: 'Players must be from the top cut standings' });
+    if (m.player1 === m.player2) return res.status(400).json({ error: 'Player cannot play themselves' });
+    if (covered.has(m.player1) || covered.has(m.player2))
+      return res.status(400).json({ error: 'Player assigned twice' });
+    covered.add(m.player1);
+    covered.add(m.player2);
+  }
+
+  if (covered.size !== t.topCutSize)
+    return res.status(400).json({ error: `All ${t.topCutSize} top cut players must be assigned` });
+
+  t.topCutPhase = true;
+  t.topCutBracket = [];
+
+  if (t.topCutSize === 4) {
+    if (matches.length !== 2) return res.status(400).json({ error: 'Need exactly 2 semi-final matches' });
+    t.topCutBracket.push({
+      name: 'Semi-Finals',
+      matches: matches.map(m => ({
+        id: crypto.randomUUID(), player1: m.player1, player2: m.player2,
+        result: null, reported: false, bye: false,
+      })),
+    });
+    t.topCutBracket.push({
+      name: 'Finals',
+      matches: [{ id: crypto.randomUUID(), player1: null, player2: null, result: null, reported: false, bye: false }],
+    });
+  } else {
+    t.topCutBracket.push({
+      name: 'Finals',
+      matches: [{ id: crypto.randomUUID(), player1: matches[0].player1, player2: matches[0].player2, result: null, reported: false, bye: false }],
     });
   }
 

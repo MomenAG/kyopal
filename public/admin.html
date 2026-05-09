@@ -98,6 +98,10 @@ let tab = 'pairings';
 let viewingRound = 0;
 let toastTimer = null;
 let currentShareUrl = '';
+let customPairingMode = false; // false | 'swiss' | 'topcut'
+let customMatches = [];
+let customByePlayerId = null;
+let selectedForPairing = null;
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -185,6 +189,10 @@ async function resumeWithToken() {
 
 // ── Setup ──
 function renderSetup() {
+  if (customPairingMode === 'start') {
+    return `<div class="header"><div class="logo">KYOPAL<span>ADMIN PANEL</span></div></div>
+      ${renderCustomPairing(tournament.players, false)}`;
+  }
   const t = tournament;
   const playerRows = t.players.map((p, i) => `
     <div class="player-row">
@@ -246,11 +254,12 @@ function renderSetup() {
         </select></div>` : ''}
     </div>` : ''}
 
-    <button class="btn" style="width:100%;padding:14px;font-size:16px;margin-top:8px"
-      ${t.players.length >= 4 ? '' : 'disabled'}
-      onclick="startTournament()">
-      ${t.players.length >= 4 ? '⚡ Start Tournament' : 'Need at least 4 players'}
-    </button>
+    ${t.players.length >= 4 ? `
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" style="flex:2;padding:14px;font-size:15px" onclick="startTournament()">⚡ Start Tournament</button>
+      <button class="btn-s" style="white-space:nowrap" onclick="enterCustomStart()">⚙ Custom</button>
+    </div>` : `
+    <button class="btn" style="width:100%;padding:14px;font-size:16px;margin-top:8px" disabled>Need at least 4 players</button>`}
 
     <div style="display:flex;gap:8px;margin-top:20px">
       <button class="btn-s" style="flex:1" onclick="load()">↻ Refresh</button>
@@ -317,6 +326,14 @@ function renderPairings() {
   const t = tournament;
   if (t.finished) return renderResults();
 
+  if (customPairingMode === 'swiss' || customPairingMode === 'topcut') {
+    const isTopCut = customPairingMode === 'topcut';
+    const players = isTopCut
+      ? t.standings.filter(p => !p.kicked).slice(0, t.topCutSize)
+      : t.standings.filter(p => !p.kicked);
+    return renderCustomPairing(players, isTopCut);
+  }
+
   const round = t.rounds[viewingRound - 1];
   if (!round) return '';
 
@@ -340,8 +357,14 @@ function renderPairings() {
   round.matches.forEach((m, i) => { html += renderMatch(m, i); });
   html += '</div>';
 
-  if (canNext) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="nextRound()">▸ Start Round ${t.currentRound+1}</button>`;
-  if (swissDone && t.topCutEnabled) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="startTopCut()">🏆 Start Top ${t.topCutSize} Cut</button>`;
+  if (canNext) html += `<div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" style="flex:2;padding:14px" onclick="nextRound()">▸ Start Round ${t.currentRound+1}</button>
+    <button class="btn-s" style="white-space:nowrap" onclick="enterCustomPairing()">⚙ Custom</button>
+  </div>`;
+  if (swissDone && t.topCutEnabled) html += `<div style="display:flex;gap:8px;margin-top:8px">
+    <button class="btn" style="flex:2;padding:14px" onclick="startTopCut()">🏆 Start Top ${t.topCutSize} Cut</button>
+    <button class="btn-s" style="white-space:nowrap" onclick="enterCustomTopCut()">⚙ Custom</button>
+  </div>`;
   if (swissDone && !t.topCutEnabled) html += `<button class="btn" style="width:100%;padding:14px;margin-top:8px" onclick="finish()">🏆 Finish Tournament</button>`;
 
   return html;
@@ -433,6 +456,107 @@ function renderStandings() {
   return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
   ${tc>0&&!tournament.topCutPhase&&!tournament.finished?`<div style="margin-top:8px;font-size:10px;color:var(--acc);padding:0 4px">▲ Top ${tc} advance</div>`:''}
   <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+}
+
+// ── Custom Pairing ──
+function checkRematch(p1id, p2id) {
+  for (const round of (tournament?.rounds || [])) {
+    for (const m of round.matches) {
+      if (m.bye) continue;
+      if ((m.player1 === p1id && m.player2 === p2id) || (m.player1 === p2id && m.player2 === p1id)) return true;
+    }
+  }
+  return false;
+}
+
+function renderCustomPairing(players, isTopCut) {
+  const t = tournament;
+  const needsBye = !isTopCut && players.length % 2 !== 0;
+  const pairedIds = new Set(customMatches.flatMap(m => [m.player1, m.player2]));
+  if (customByePlayerId) pairedIds.add(customByePlayerId);
+  const unpaired = players.filter(p => !pairedIds.has(p.id));
+  const allDone = unpaired.length === 0;
+  const title = customPairingMode === 'start' ? 'Custom Pairing — Round 1' : (isTopCut ? `Custom Bracket — Top ${t.topCutSize}` : `Custom Pairing — Round ${t.currentRound + 1}`);
+
+  let html = `<div class="card fade"><div class="section" style="margin-bottom:16px">${title}</div>`;
+
+  if (unpaired.length > 0) {
+    const instruction = selectedForPairing
+      ? `<span style="color:var(--acc)">${esc(pname(selectedForPairing))}</span> — select opponent:`
+      : 'Tap a player to select:';
+    html += `<div style="font-size:12px;color:var(--t2);margin-bottom:10px">${instruction}</div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
+    unpaired.forEach(p => {
+      const isSel = selectedForPairing === p.id;
+      html += `<button onclick="selectForPairing('${p.id}')" style="padding:8px 16px;border-radius:var(--rs);font-family:'Chakra Petch',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:2px solid ${isSel?'var(--acc)':'var(--brd)'};background:${isSel?'var(--accg)':'var(--bg4)'};color:${isSel?'var(--acc)':'var(--t1)'};">${esc(p.name)}</button>`;
+    });
+    html += `</div>`;
+    if (selectedForPairing && needsBye && !customByePlayerId) {
+      html += `<button onclick="assignBye()" style="margin-bottom:12px;padding:7px 14px;border-radius:var(--rs);font-family:'Chakra Petch',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,170,34,0.4);background:rgba(255,170,34,0.08);color:var(--yel)">Give Bye → ${esc(pname(selectedForPairing))}</button>`;
+    }
+    if (customMatches.length > 0 || customByePlayerId) {
+      html += `<div style="border-top:1px solid var(--brd);margin:4px 0 14px"></div>`;
+    }
+  }
+
+  if (customMatches.length > 0 || customByePlayerId) {
+    html += `<div style="font-size:11px;color:var(--t3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px">Confirmed</div>`;
+    customMatches.forEach((m, i) => {
+      const isRM = checkRematch(m.player1, m.player2);
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg2);border:1px solid ${isRM?'rgba(255,170,34,0.3)':'var(--brd)'};border-radius:var(--rs);margin-bottom:8px">
+        <span style="flex:1;font-size:13px;font-weight:600">${esc(pname(m.player1))} <span style="color:var(--t3);font-weight:400">vs</span> ${esc(pname(m.player2))}${isRM?' <span style="font-size:10px;color:var(--yel);font-weight:700;margin-left:4px">⚠ REMATCH</span>':''}</span>
+        <button onclick="removePair(${i})" style="background:transparent;border:none;cursor:pointer;color:var(--t3);font-size:18px;line-height:1;padding:2px 6px">✕</button>
+      </div>`;
+    });
+    if (customByePlayerId) {
+      html += `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg2);border:1px solid var(--brd);border-radius:var(--rs);margin-bottom:8px">
+        <span style="flex:1;font-size:13px;font-weight:600">${esc(pname(customByePlayerId))} <span style="font-size:10px;color:var(--yel);font-weight:700;margin-left:6px">BYE</span></span>
+        <button onclick="removeBye()" style="background:transparent;border:none;cursor:pointer;color:var(--t3);font-size:18px;line-height:1;padding:2px 6px">✕</button>
+      </div>`;
+    }
+  } else {
+    html += `<div style="text-align:center;padding:20px 0;color:var(--t3);font-size:13px">No pairings yet — tap players above to pair them</div>`;
+  }
+
+  html += `<div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn-s" style="flex:1" onclick="cancelCustomPairing()">Cancel</button>
+    <button class="btn" style="flex:2;padding:12px" ${allDone?'':'disabled'} onclick="confirmCustomPairing(${isTopCut})">
+      ${customPairingMode === 'start' ? '⚡ Start Tournament' : (isTopCut ? '🏆 Confirm Bracket' : `▸ Start Round ${t.currentRound + 1}`)}
+    </button>
+  </div></div>`;
+  return html;
+}
+
+function enterCustomStart() { customPairingMode = 'start'; customMatches = []; customByePlayerId = null; selectedForPairing = null; render(); }
+function enterCustomPairing() { customPairingMode = 'swiss'; customMatches = []; customByePlayerId = null; selectedForPairing = null; render(); }
+function enterCustomTopCut() { customPairingMode = 'topcut'; customMatches = []; customByePlayerId = null; selectedForPairing = null; render(); }
+function cancelCustomPairing() { customPairingMode = false; customMatches = []; customByePlayerId = null; selectedForPairing = null; render(); }
+
+function selectForPairing(id) {
+  if (selectedForPairing === null) { selectedForPairing = id; }
+  else if (selectedForPairing === id) { selectedForPairing = null; }
+  else { customMatches.push({ player1: selectedForPairing, player2: id }); selectedForPairing = null; }
+  render();
+}
+function assignBye() { if (!selectedForPairing) return; customByePlayerId = selectedForPairing; selectedForPairing = null; render(); }
+function removePair(i) { customMatches.splice(i, 1); render(); }
+function removeBye() { customByePlayerId = null; render(); }
+
+async function confirmCustomPairing(isTopCut) {
+  try {
+    if (customPairingMode === 'start') {
+      await api('/admin/custom-start', { method: 'POST', body: JSON.stringify({ matches: customMatches, byePlayerId: customByePlayerId }) });
+      toast('Tournament started!');
+    } else if (isTopCut) {
+      await api('/admin/custom-top-cut', { method: 'POST', body: JSON.stringify({ matches: customMatches }) });
+      toast('Bracket set!');
+    } else {
+      await api('/admin/custom-round', { method: 'POST', body: JSON.stringify({ matches: customMatches, byePlayerId: customByePlayerId }) });
+      toast('Round started!');
+    }
+    cancelCustomPairing();
+    await load();
+  } catch(e) { toast(e.message); }
 }
 
 // ── Actions ──
