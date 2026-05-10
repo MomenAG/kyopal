@@ -287,6 +287,57 @@ app.post('/api/tournament/join', (req, res) => {
   res.json({ player, playerCount: t.players.length });
 });
 
+// Player self-report match result
+app.post('/api/player/report', (req, res) => {
+  const t = loadTournament();
+  if (!t) return res.status(404).json({ error: 'No tournament' });
+  if (!t.started) return res.status(400).json({ error: 'Tournament not started' });
+
+  const { matchId, result, playerId } = req.body;
+
+  if (!playerId) return res.status(400).json({ error: 'Player ID required' });
+  if (!['win', 'loss', 'dl'].includes(result)) return res.status(400).json({ error: 'Invalid result' });
+
+  const player = t.players.find(p => p.id === playerId);
+  if (!player) return res.status(404).json({ error: 'Player not found' });
+
+  let match = null;
+  if (t.topCutPhase) {
+    for (const br of t.topCutBracket) {
+      const m = br.matches.find(m => m.id === matchId);
+      if (m) { match = m; break; }
+    }
+  } else {
+    for (const round of t.rounds) {
+      const m = round.matches.find(m => m.id === matchId);
+      if (m) { match = m; break; }
+    }
+  }
+
+  if (!match) return res.status(404).json({ error: 'Match not found' });
+  if (match.reported) return res.status(400).json({ error: 'Match already reported — contact admin to correct' });
+  if (match.player1 !== playerId && match.player2 !== playerId) {
+    return res.status(403).json({ error: 'You are not in this match' });
+  }
+
+  const isP1 = match.player1 === playerId;
+  let matchResult;
+  if (result === 'dl') {
+    matchResult = 'dl';
+  } else if (result === 'win') {
+    matchResult = isP1 ? 'p1' : 'p2';
+  } else {
+    matchResult = isP1 ? 'p2' : 'p1';
+  }
+
+  match.result = matchResult;
+  match.reported = true;
+  saveTournament(t);
+
+  const standings = getStandings(t);
+  res.json({ success: true, standings });
+});
+
 // Player self-remove
 app.post('/api/tournament/leave', (req, res) => {
   const t = loadTournament();

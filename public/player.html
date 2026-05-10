@@ -50,6 +50,13 @@ label{display:block;font-size:11px;font-weight:600;color:var(--t2);letter-spacin
 .match-hero .result{font-size:14px;font-weight:600;margin-top:8px;padding:6px 16px;border-radius:20px;display:inline-block}
 .match-hero .result.w{background:rgba(0,212,170,0.1);color:var(--acc)}
 .match-hero .result.l{background:rgba(255,68,102,0.1);color:var(--red)}
+.report-btns{display:flex;gap:8px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+.btn-win{background:var(--acc);color:var(--bg);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;padding:10px 24px;border-radius:var(--rs);border:none;cursor:pointer;transition:all .2s;flex:1;min-width:80px}
+.btn-win:hover{filter:brightness(1.1)}
+.btn-loss{background:rgba(255,68,102,0.15);color:var(--red);font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:14px;padding:10px 24px;border-radius:var(--rs);border:1px solid rgba(255,68,102,0.3);cursor:pointer;transition:all .2s;flex:1;min-width:80px}
+.btn-loss:hover{background:rgba(255,68,102,0.25)}
+.btn-dl{background:transparent;color:var(--t3);font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:12px;padding:8px 16px;border-radius:var(--rs);border:1px solid var(--brd);cursor:pointer;transition:all .2s;width:100%}
+.btn-dl:hover{border-color:var(--red);color:var(--red)}
 
 .history-card{background:var(--bg3);border:1px solid var(--brd);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
 .history-round{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);width:32px}
@@ -338,7 +345,7 @@ function renderMyMatch() {
         <div class="mvs">VS</div>
         <div class="pname">${esc(oppName)}</div>
       </div>
-      ${myMatch.reported ? resultHtml : '<div class="status">Waiting for result...</div>'}
+      ${myMatch.reported ? resultHtml : renderReportButtons(myMatch.id)}
     </div>
   `;
 }
@@ -414,6 +421,28 @@ function renderStandings() {
   }).join('');
   return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
   <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+}
+
+function renderReportButtons(matchId) {
+  return `
+    <div class="report-btns">
+      <button class="btn-win" onclick="reportResult('${matchId}','win')">Win</button>
+      <button class="btn-loss" onclick="reportResult('${matchId}','loss')">Loss</button>
+    </div>
+    <div class="report-btns" style="margin-top:6px">
+      <button class="btn-dl" onclick="reportResult('${matchId}','dl')">Double Loss</button>
+    </div>
+  `;
+}
+
+async function reportResult(matchId, result) {
+  const labels = { win: 'Win', loss: 'Loss', dl: 'Double Loss' };
+  if (!confirm(`Report result: ${labels[result]}? This cannot be undone — contact admin if you make a mistake.`)) return;
+  try {
+    await api('/player/report', { method: 'POST', body: JSON.stringify({ matchId, result, playerId: myId }) });
+    toast('Result reported!');
+    await load();
+  } catch (e) { toast(e.message); }
 }
 
 load();
