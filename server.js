@@ -858,11 +858,20 @@ app.post('/api/admin/cancel', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
-// Reset tournament
+// Reset tournament — keep players/IDs/links, wipe all rounds and results
 app.post('/api/admin/reset', requireAdmin, (req, res) => {
-  const t = defaultTournament();
+  const t = req.tournament;
+  t.rounds = [];
+  t.currentRound = 0;
+  t.totalRounds = 0;
+  t.started = false;
+  t.registrationLocked = false;
+  t.topCutPhase = false;
+  t.topCutBracket = [];
+  t.finished = false;
   saveTournament(t);
-  res.json({ tournamentId: t.id, adminToken: t.adminToken });
+  const standings = getStandings(t);
+  res.json({ ...t, standings, adminToken: undefined });
 });
 
 // ── Page Routes ──

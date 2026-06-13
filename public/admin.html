@@ -606,8 +606,8 @@ async function startTopCut() { try { await api('/admin/start-top-cut',{method:'P
 async function advanceFinals() { try { await api('/admin/advance-finals',{method:'POST'}); await load(); } catch(e){toast(e.message);} }
 async function finish() { try { await api('/admin/finish',{method:'POST'}); toast('Tournament complete!'); await load(); } catch(e){toast(e.message);} }
 async function confirmReset() {
-  if (confirm('Reset tournament? All data will be lost.')) {
-    try { const d = await api('/admin/reset',{method:'POST'}); adminToken=d.adminToken; localStorage.setItem('kyopal_admin_token',adminToken); toast('Reset!'); await load(); } catch(e){toast(e.message);}
+  if (confirm('Restart tournament? All match data will be cleared. Players and their links will be kept.')) {
+    try { await api('/admin/reset',{method:'POST'}); toast('Restarted!'); await load(); } catch(e){toast(e.message);}
   }
 }
 async function confirmEnd() {
