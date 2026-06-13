@@ -228,6 +228,29 @@ function generatePairings(tournament) {
   return matches;
 }
 
+function pairRemainingPlayers(tournament, uncoveredIds, isFirstRound) {
+  const matches = [];
+  if (uncoveredIds.length === 0) return matches;
+
+  let ids = isFirstRound
+    ? shuffle([...uncoveredIds])
+    : getStandings(tournament).map(p => p.id).filter(id => uncoveredIds.includes(id));
+
+  if (ids.length % 2 !== 0) {
+    let byeIdx = ids.length - 1;
+    for (let i = ids.length - 1; i >= 0; i--) {
+      if (getPlayerRecord(tournament, ids[i]).byes === 0) { byeIdx = i; break; }
+    }
+    const byeId = ids.splice(byeIdx, 1)[0];
+    matches.push({ id: crypto.randomUUID(), player1: byeId, player2: null, result: 'p1', reported: true, bye: true });
+  }
+
+  for (const [id1, id2] of findBestPairing(tournament, ids)) {
+    matches.push({ id: crypto.randomUUID(), player1: id1, player2: id2, result: null, reported: false, bye: false });
+  }
+  return matches;
+}
+
 function getRecommendedRounds(n) {
   if (n <= 4) return 3;
   if (n <= 8) return 3;
@@ -505,9 +528,6 @@ app.post('/api/admin/custom-start', requireAdmin, (req, res) => {
     covered.add(m.player2);
   }
 
-  if (covered.size !== allPlayerIds.length)
-    return res.status(400).json({ error: 'Not all players are assigned' });
-
   if (!t.totalRounds) t.totalRounds = getRecommendedRounds(t.players.length);
   t.started = true;
   t.registrationLocked = true;
@@ -526,6 +546,8 @@ app.post('/api/admin/custom-start', requireAdmin, (req, res) => {
       result: null, reported: false, bye: false,
     });
   }
+  const uncoveredStart = allPlayerIds.filter(id => !covered.has(id));
+  roundMatches.push(...pairRemainingPlayers(t, uncoveredStart, true));
 
   t.rounds = [{ round: 1, matches: roundMatches }];
   saveTournament(t);
@@ -722,9 +744,6 @@ app.post('/api/admin/custom-round', requireAdmin, (req, res) => {
     covered.add(m.player2);
   }
 
-  if (covered.size !== activePlayers.length)
-    return res.status(400).json({ error: 'Not all active players are assigned' });
-
   const roundMatches = [];
   if (byePlayerId) {
     roundMatches.push({
@@ -738,6 +757,8 @@ app.post('/api/admin/custom-round', requireAdmin, (req, res) => {
       result: null, reported: false, bye: false,
     });
   }
+  const uncoveredRound = activePlayers.filter(id => !covered.has(id));
+  roundMatches.push(...pairRemainingPlayers(t, uncoveredRound, false));
 
   t.currentRound++;
   t.rounds.push({ round: t.currentRound, matches: roundMatches });

@@ -549,7 +549,7 @@ function renderCustomPairing(players, isTopCut) {
 
   html += `<div style="display:flex;gap:8px;margin-top:16px">
     <button class="btn-s" style="flex:1" onclick="cancelCustomPairing()">Cancel</button>
-    <button class="btn" style="flex:2;padding:12px" ${allDone?'':'disabled'} onclick="confirmCustomPairing(${isTopCut})">
+    <button class="btn" style="flex:2;padding:12px" ${!allDone && isTopCut?'disabled':''} onclick="confirmCustomPairing(${isTopCut})">
       ${customPairingMode === 'start' ? '⚡ Start Tournament' : (isTopCut ? '🏆 Confirm Bracket' : `▸ Start Round ${t.currentRound + 1}`)}
     </button>
   </div></div>`;
