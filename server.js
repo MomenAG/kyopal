@@ -444,6 +444,24 @@ app.post('/api/admin/remove-player', requireAdmin, (req, res) => {
   res.json({ players: t.players });
 });
 
+// Admin add player (works before and during tournament)
+app.post('/api/admin/add-player', requireAdmin, (req, res) => {
+  const t = req.tournament;
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Name required' });
+
+  const trimmed = name.trim();
+  if (t.players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
+    return res.status(400).json({ error: 'Name already taken' });
+  }
+
+  const player = { id: crypto.randomUUID(), name: trimmed };
+  t.players.push(player);
+  saveTournament(t);
+
+  res.json({ player, playerCount: t.players.length });
+});
+
 // Update tournament settings
 app.post('/api/admin/settings', requireAdmin, (req, res) => {
   const t = req.tournament;

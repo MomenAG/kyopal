@@ -126,6 +126,18 @@ async function load() {
       tournament = null;
     } else {
       expiredLink = false;
+      // Auto-identify admin-added players via ?pid= link
+      if (!myId) {
+        const pid = new URLSearchParams(location.search).get('pid');
+        if (pid) {
+          const p = tournament.players.find(x => x.id === pid && !x.kicked);
+          if (p) {
+            myId = p.id; myName = p.name;
+            localStorage.setItem('kyopal_player_id', myId);
+            localStorage.setItem('kyopal_player_name', myName);
+          }
+        }
+      }
     }
     render();
   } catch { expiredLink = false; render(); }
