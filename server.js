@@ -65,6 +65,7 @@ function shuffle(arr) {
 function getPlayerRecord(tournament, playerId) {
   let wins = 0, losses = 0, byes = 0;
   const opponents = [];
+  const lostRounds = [];
 
   for (const round of tournament.rounds) {
     for (const match of round.matches) {
@@ -82,10 +83,12 @@ function getPlayerRecord(tournament, playerId) {
         if (match.reported) {
           if (match.result === 'dl') {
             losses++;
+            lostRounds.push(round.round);
           } else if ((match.result === 'p1' && isP1) || (match.result === 'p2' && !isP1)) {
             wins++;
           } else {
             losses++;
+            lostRounds.push(round.round);
           }
         }
       }
@@ -97,7 +100,7 @@ function getPlayerRecord(tournament, playerId) {
   const matchWinPct = matchesPlayed > 0 ? Math.max(matchPoints / (matchesPlayed * 3), 0.25) : 0.25;
   const gameWinPct = matchesPlayed > 0 ? Math.max(wins / matchesPlayed, 0.25) : 0.25;
 
-  return { wins, losses, byes, matchPoints, matchWinPct, gameWinPct, opponents, matchesPlayed };
+  return { wins, losses, byes, matchPoints, matchWinPct, gameWinPct, opponents, matchesPlayed, lostRounds };
 }
 
 function getOppWinPct(tournament, playerId) {
@@ -120,10 +123,11 @@ function getTiebreakerNumber(tournament, playerId) {
   const rec = getPlayerRecord(tournament, playerId);
   const owp = getOppWinPct(tournament, playerId);
   const oowp = getOppOppWinPct(tournament, playerId);
-  const xx = rec.matchPoints;
-  const yyy = Math.round(owp * 1000);
-  const zzz = Math.round(oowp * 1000);
-  return xx * 1000000 + yyy * 1000 + zzz;
+  const aa = rec.matchPoints;
+  const bbb = Math.round(owp * 1000);
+  const ccc = Math.round(oowp * 1000);
+  const ddd = rec.lostRounds.reduce((sum, r) => sum + r * r, 0);
+  return aa * 1_000_000_000 + bbb * 1_000_000 + ccc * 1_000 + ddd;
 }
 
 function getStandings(tournament) {
@@ -132,8 +136,12 @@ function getStandings(tournament) {
     const owp = getOppWinPct(tournament, p.id);
     const oowp = getOppOppWinPct(tournament, p.id);
     const tb = getTiebreakerNumber(tournament, p.id);
-    return { ...p, ...rec, oppWinPct: owp, oppOppWinPct: oowp, tiebreaker: tb };
-  }).sort((a, b) => b.tiebreaker - a.tiebreaker);
+    const ddd = rec.lostRounds.reduce((sum, r) => sum + r * r, 0);
+    return { ...p, ...rec, oppWinPct: owp, oppOppWinPct: oowp, tiebreaker: tb, lostRoundSqSum: ddd };
+  }).sort((a, b) => {
+    if (b.tiebreaker !== a.tiebreaker) return b.tiebreaker - a.tiebreaker;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 function havePlayed(tournament, p1, p2) {

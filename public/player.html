@@ -419,10 +419,11 @@ function renderStandings() {
   const s = tournament.standings;
   const rows = s.map((p, i) => {
     const r = i + 1;
-    const xx = String(p.matchPoints).padStart(2,'0');
-    const yyy = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
-    const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
-    const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
+    const aa = String(p.matchPoints).padStart(2,'0');
+    const bbb = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
+    const ccc = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
+    const ddd = String(p.lostRoundSqSum ?? 0).padStart(3,'0');
+    const tb = `<span style="color:var(--acc)">${aa}</span><span style="color:var(--t2)">${bbb}</span><span style="color:var(--t3)">${ccc}</span><span style="color:var(--yel)">${ddd}</span>`;
     const isMe = p.id === myId;
     const kickedBadge = p.kicked ? '<span style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--red);background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);border-radius:3px;padding:1px 5px;margin-left:6px">KICKED</span>' : '';
     const rowAttr = p.kicked ? 'style="opacity:.45"' : (isMe ? 'class="me"' : '');
@@ -432,7 +433,7 @@ function renderStandings() {
       <td class="c" style="font-size:12px;letter-spacing:.5px">${tb}</td></tr>`;
   }).join('');
   return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">AA</span><span style="color:var(--t2)">BBB</span><span style="color:var(--t3)">CCC</span><span style="color:var(--yel)">DDD</span> · <span style="color:var(--acc)">AA</span>=Points · <span style="color:var(--t2)">BBB</span>=OppWin‰ · <span style="color:var(--t3)">CCC</span>=OppOppWin‰ · <span style="color:var(--yel)">DDD</span>=Σ(lost round²)</div>`;
 }
 
 function renderReportButtons(matchId) {

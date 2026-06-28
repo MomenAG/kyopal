@@ -464,10 +464,11 @@ function renderStandings() {
   const canAct = !tournament.finished;
   const rows = s.map((p, i) => {
     const r = i + 1;
-    const xx = String(p.matchPoints).padStart(2,'0');
-    const yyy = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
-    const zzz = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
-    const tb = `<span style="color:var(--acc)">${xx}</span><span style="color:var(--t2)">${yyy}</span><span style="color:var(--t3)">${zzz}</span>`;
+    const aa = String(p.matchPoints).padStart(2,'0');
+    const bbb = String(Math.round(p.oppWinPct*1000)).padStart(3,'0');
+    const ccc = String(Math.round(p.oppOppWinPct*1000)).padStart(3,'0');
+    const ddd = String(p.lostRoundSqSum ?? 0).padStart(3,'0');
+    const tb = `<span style="color:var(--acc)">${aa}</span><span style="color:var(--t2)">${bbb}</span><span style="color:var(--t3)">${ccc}</span><span style="color:var(--yel)">${ddd}</span>`;
     const cut = r <= tc && !tournament.topCutPhase && !tournament.finished && !p.kicked;
     const rowStyle = p.kicked ? 'style="opacity:.45"' : (cut ? 'style="color:var(--acc)"' : '');
     const kickedBadge = p.kicked ? '<span class="kicked-badge">KICKED</span>' : '';
@@ -484,7 +485,7 @@ function renderStandings() {
   }).join('');
   return `<div class="card fade" style="padding:0;overflow-x:auto"><table class="standings-table"><thead><tr><th class="c">#</th><th>Player</th><th class="c">REC</th><th class="c">TB#</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
   ${tc>0&&!tournament.topCutPhase&&!tournament.finished?`<div style="margin-top:8px;font-size:10px;color:var(--acc);padding:0 4px">▲ Top ${tc} advance</div>`:''}
-  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">XX</span><span style="color:var(--t2)">YYY</span><span style="color:var(--t3)">ZZZ</span> · <span style="color:var(--acc)">XX</span>=Points · <span style="color:var(--t2)">YYY</span>=OppWin‰ · <span style="color:var(--t3)">ZZZ</span>=OppOppWin‰</div>`;
+  <div style="margin-top:8px;font-size:10px;color:var(--t3);line-height:1.6;padding:0 4px">TB# = <span style="color:var(--acc)">AA</span><span style="color:var(--t2)">BBB</span><span style="color:var(--t3)">CCC</span><span style="color:var(--yel)">DDD</span> · <span style="color:var(--acc)">AA</span>=Points · <span style="color:var(--t2)">BBB</span>=OppWin‰ · <span style="color:var(--t3)">CCC</span>=OppOppWin‰ · <span style="color:var(--yel)">DDD</span>=Σ(lost round²)</div>`;
 }
 
 // ── Custom Pairing ──
