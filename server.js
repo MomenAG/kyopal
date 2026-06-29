@@ -97,8 +97,8 @@ function getPlayerRecord(tournament, playerId) {
 
   const matchPoints = wins * 3;
   const matchesPlayed = wins + losses;
-  const matchWinPct = matchesPlayed > 0 ? Math.max(matchPoints / (matchesPlayed * 3), 0.25) : 0.25;
-  const gameWinPct = matchesPlayed > 0 ? Math.max(wins / matchesPlayed, 0.25) : 0.25;
+  const matchWinPct = matchesPlayed > 0 ? Math.max(matchPoints / (matchesPlayed * 3), 1 / 3) : 1 / 3;
+  const gameWinPct = matchesPlayed > 0 ? Math.max(wins / matchesPlayed, 1 / 3) : 1 / 3;
 
   return { wins, losses, byes, matchPoints, matchWinPct, gameWinPct, opponents, matchesPlayed, lostRounds };
 }
@@ -108,13 +108,13 @@ function getOppWinPct(tournament, playerId) {
   const oppPcts = record.opponents.map(opp => getPlayerRecord(tournament, opp).matchWinPct);
   // Each bye counts as a virtual opponent at 1/3 win rate (standard TCG tiebreaker convention)
   for (let i = 0; i < record.byes; i++) oppPcts.push(1 / 3);
-  if (oppPcts.length === 0) return 0.25;
+  if (oppPcts.length === 0) return 1 / 3;
   return oppPcts.reduce((a, b) => a + b, 0) / oppPcts.length;
 }
 
 function getOppOppWinPct(tournament, playerId) {
   const record = getPlayerRecord(tournament, playerId);
-  if (record.opponents.length === 0) return 0.25;
+  if (record.opponents.length === 0) return 1 / 3;
   const oppOppPcts = record.opponents.map(opp => getOppWinPct(tournament, opp));
   return oppOppPcts.reduce((a, b) => a + b, 0) / oppOppPcts.length;
 }
